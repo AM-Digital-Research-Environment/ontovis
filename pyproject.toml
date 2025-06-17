@@ -1,0 +1,17 @@
+[project]
+name = "41-07-ontovis"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Oliver Baumann", email = "oliver.baumann@uni-bayreuth.de" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[project.scripts]
+41-07-ontovis = "41_07_ontovis:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
