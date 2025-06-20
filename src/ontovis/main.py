@@ -1,14 +1,15 @@
-from collections import defaultdict
 import logging
-import pathlib
 import xml.etree.ElementTree as ET
-from collections.abc import Iterable
+from collections import defaultdict
 from dataclasses import dataclass
-from typing import Annotated, Self
+from pprint import pprint as pp
+from typing import Self
 
 import requests
 import typer
 from jinja2 import Environment, PackageLoader, select_autoescape
+
+from ontovis.parser import parse
 
 logging.basicConfig(
     format="%(asctime)-15s %(name)-5s %(levelname)-8s %(message)s",
@@ -39,75 +40,47 @@ def print_ontology(
         autoescape=select_autoescape(),
     )
 
-    template = env.get_template(f"{template}.dot.jinja2")
+    tmpl = env.get_template(f"{template}.dot.jinja2")
 
     # groups: dict[str, Group] = {}
     groups: defaultdict[str, Group] = defaultdict(
         lambda: Group(name="NOT_SET", subgroups=[], path=[], fields=[])
     )
 
-    n_disabled = 0
-    for path in root:
-        disabled = "0" == safe_get_text_by_xpath(path, "./enabled")
-        if skip_disabled and disabled:
-            disabled += 1
+    paths = parse(root)
+    pp(paths)
+    n_disabled = len([p for p in paths if not p.enabled])
+
+    for path in paths:
+        if skip_disabled and not path.enabled:
             continue
 
-        path_id = safe_get_text_by_xpath(path, "./id")
-        # true/false is 1/0
-        is_group = "1" == safe_get_text_by_xpath(path, "./is_group")
-        group_id = safe_get_text_by_xpath(path, "./group_id")
-
-        path_array = path.find("path_array")
-        assert path_array is not None
-
-        path_array = [strip_prefix(particle.text) for particle in path_array]
-
-        # remove the main URL part of the path particle
-        path_array = [strip_prefix(particle) for particle in path_array]
-        # TODO: move this quoting into the template
-        path_array = [f'"{x}"' for x in path_array]
-
-        if is_group:
+        if path.is_group:
             # the defaultdict will create an empty group we can use
-            group = groups[path_id]
-            group.name = path_id
-            group.path = path_array
+            group = groups[path.path_id]
+            group.name = path.path_id
+            group.path = path.path_array
 
             # a top-level group has no group-id, so we're done here
-            if group_id == "0":
+            if path.group_id == "0":
                 continue
 
             # group has a parent: find it, and append this group to the subgrups
-            groups[group_id].subgroups.append(group)
-            groups[path_id] = group
+            groups[path.group_id].subgroups.append(group)
+            groups[path.path_id] = group
             continue
 
         # the path is a field, so append it to the correct group
-        groups[group_id].fields.append(Field(name=path_id, path=path_array))
+        groups[path.group_id].fields.append(
+            Field(name=path.path_id, path=path.path_array)
+        )
 
     if pprint:
-        from pprint import pprint as pp
-
         pp(groups)
         return typer.Exit()
 
-    print(template.render(groups=groups))
+    print(tmpl.render(groups=groups))
     return typer.Exit()
-
-
-def safe_get_text_by_xpath(path: ET.Element, xpath: str) -> str:
-    thing = path.find(xpath)
-    assert thing is not None and thing.text is not None
-
-    return thing.text
-
-
-def strip_prefix(s: str | None) -> str:
-    if s is None:
-        return "<NO_ID>"
-
-    return pathlib.Path(s).name
 
 
 @dataclass
