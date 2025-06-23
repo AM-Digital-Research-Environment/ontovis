@@ -1,7 +1,8 @@
+from collections.abc import Iterable
 import logging
 import xml.etree.ElementTree as ET
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pprint import pprint as pp
 from typing import Self
 
@@ -62,7 +63,7 @@ def print_ontology(
             group.path = path.path_array
 
             # a top-level group has no group-id, so we're done here
-            if path.group_id == "0":
+            if path.group_id is None:
                 continue
 
             # group has a parent: find it, and append this group to the subgrups
@@ -71,6 +72,7 @@ def print_ontology(
             continue
 
         # the path is a field, so append it to the correct group
+        assert path.group_id is not None
         groups[path.group_id].fields.append(
             Field(name=path.path_id, path=path.path_array)
         )
@@ -86,12 +88,25 @@ def print_ontology(
 @dataclass
 class Field:
     name: str
-    path: list[str]
+    path: list[str] = field(default_factory=list)
 
 
 @dataclass
 class Group:
     name: str
-    subgroups: list[Self]
-    path: list[str]
-    fields: list[Field]
+    subgroups: list["Group"] = field(default_factory=list)
+    path: list[str] = field(default_factory=list)
+    fields: list[Field] = field(default_factory=list)
+
+    @classmethod
+    def find_group(cls, groups: Iterable["Group"], group_id: str) -> "Group | None":
+        for group in groups:
+            if group.name == group_id:
+                return group
+
+        for group in groups:
+            hit = Group.find_group(group.subgroups, group_id)
+            if hit is not None:
+                return hit
+
+        return None
