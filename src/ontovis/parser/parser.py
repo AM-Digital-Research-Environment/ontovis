@@ -1,6 +1,30 @@
+# pyright: strict
 from collections.abc import Iterable
+from xml.etree.ElementTree import Element
 
-from ontovis.lib.types import Field, Group, Path
+from .typed_accessors import get_path_array, safe_get_bool, safe_get_text
+from .types import Field, Group, Path
+
+
+def parse_pathbuilder(document: Element) -> list[Path]:
+    out: list[Path] = []
+    paths = document.findall("path")
+    if paths == []:
+        return []
+
+    for path in paths:
+        enabled = safe_get_bool(path, "./enabled")
+        path_id = safe_get_text(path, "./id")
+        is_group = safe_get_bool(path, "./is_group")
+        group_id = safe_get_text(path, "./group_id")
+        if group_id == "0":
+            group_id = None
+
+        path_array = get_path_array(path)
+
+        out.append(Path(enabled, path_id, is_group, group_id, path_array))
+
+    return out
 
 
 def build_groups(paths: Iterable[Path], skip_disabled: bool = True) -> dict[str, Group]:

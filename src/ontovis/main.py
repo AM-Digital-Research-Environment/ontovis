@@ -1,30 +1,22 @@
 # pyright: strict
-import logging
-from pprint import pprint as pp
-
 import typer
 from jinja2 import Environment, PackageLoader, select_autoescape
+from rich import print as rprint
 
-from ontovis.lib.builder import build_groups
-from ontovis.lib.parser import parse_pathbuilder
-from ontovis.lib.reader import read_document
+from ontovis.io import read_local_or_remote
+from ontovis.parser import build_groups, parse_pathbuilder
 
-logging.basicConfig(
-    format="%(asctime)-15s %(name)-5s %(levelname)-8s %(message)s",
-    level=logging.INFO,
-)
-logger = logging.getLogger("main")
-app = typer.Typer()
+app = typer.Typer(no_args_is_help=True)
 
 
 @app.command()
-def print_ontology(
+def render(
     file: str,
     template: str = "graph",
     skip_disabled: bool = True,
     pprint: bool = False,
-):
-    root = read_document(file)
+) -> typer.Exit:
+    root = read_local_or_remote(file)
 
     env = Environment(
         loader=PackageLoader("ontovis"),
@@ -35,19 +27,22 @@ def print_ontology(
 
     paths = parse_pathbuilder(root)
     if paths == []:
-        logger.info("pathbuilder document was empty. quitting")
+        rprint("[red]Pathbuilder document was empty. [bold]Quitting[/bold][/red]")
         return typer.Exit()
 
-    # try:
     groups = build_groups(paths, skip_disabled)
-    # except Exception as e:
-    #     logger.error(f"Encountered exception: {e}")
-    #     return typer.Exit(1)
 
     if pprint:
+        from pprint import pprint as pp
+
         pp(groups)
         return typer.Exit()
 
     print(tmpl.render(groups=groups))
 
+    return typer.Exit()
+
+
+@app.command()
+def stats() -> typer.Exit:
     return typer.Exit()
