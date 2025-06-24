@@ -1,9 +1,10 @@
 import pytest
 from typer.testing import CliRunner
 
-from ontovis.main import app, build_groups, read_document
-from ontovis.parser import parse
-from ontovis.types import Field, Group
+from ontovis.lib.parser import parse_pathbuilder
+from ontovis.lib.reader import read_document
+from ontovis.lib.types import Field, Group
+from ontovis.main import app, build_groups
 
 runner = CliRunner()
 
@@ -37,7 +38,7 @@ def test_entrypoint_local_file_disabled_paths():
 
 def test_group_builder():
     root = read_document("./tests/fixtures/fixture_group-hierarchy.xml")
-    paths = parse(root)
+    paths = parse_pathbuilder(root)
     result = build_groups(paths)
 
     expected = {

@@ -1,8 +1,8 @@
+# pyright: strict
 import pathlib
 from xml.etree.ElementTree import Element
 
-
-from ontovis.types import Path
+from .types import Path
 
 
 def strip_prefix(s: str | None) -> str:
@@ -39,7 +39,7 @@ def get_path_array(path: Element) -> list[str]:
     return path_array
 
 
-def parse(document: Element) -> list[Path]:
+def parse_pathbuilder(document: Element) -> list[Path]:
     out: list[Path] = []
     paths = document.findall("path")
     if paths == []:

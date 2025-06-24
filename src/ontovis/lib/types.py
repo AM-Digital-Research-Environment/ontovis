@@ -1,3 +1,4 @@
+# pyright: strict
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
@@ -8,7 +9,7 @@ class Path:
     path_id: str
     is_group: bool
     group_id: str | None
-    path_array: list[str]
+    path_array: list[str] = field(default_factory=list)
 
 
 @dataclass

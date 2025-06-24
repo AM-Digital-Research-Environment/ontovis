@@ -14,22 +14,16 @@ class Path:
     path_array: list[str]
     ...
 
-
 @dataclass
 class Field:
     name: str
-    path: list[str] = ...
-
+    path: list[str]
 
 @dataclass
 class Group:
     name: str
-    subgroups: list[Group] = ...
-    path: list[str] = ...
-    fields: list[Field] = ...
+    subgroups: list[Group] = []
+    path: list[str] = []
+    fields: list[Field] = []
     @classmethod
-    def find_group(cls, groups: Iterable[Group], group_id: str) -> Group | None:
-        ...
-    
-
-
+    def find_group(cls, groups: Iterable[Group], group_id: str) -> Group | None: ...
