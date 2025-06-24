@@ -39,12 +39,17 @@ def get_path_array(path: Element) -> list[str]:
 
 def parse(document: Element) -> list[Path]:
     out: list[Path] = []
+    paths = document.findall("path")
+    if paths == []:
+        return []
 
-    for path in document:
+    for path in paths:
         enabled = safe_get_bool(path, "./enabled")
         path_id = safe_get_text(path, "./id")
         is_group = safe_get_bool(path, "./is_group")
         group_id = safe_get_text(path, "./group_id")
+        if group_id == "0":
+            group_id = None
 
         path_array = get_path_array(path)
 

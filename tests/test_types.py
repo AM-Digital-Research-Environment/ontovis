@@ -1,4 +1,5 @@
-from ontovis.main import Group
+from ontovis.types import Group
+
 
 g1 = Group(name="test1", subgroups=[], path=[], fields=[])
 

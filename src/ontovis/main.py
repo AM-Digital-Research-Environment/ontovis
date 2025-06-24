@@ -1,11 +1,9 @@
 from collections.abc import Iterable
 import logging
 import xml.etree.ElementTree as ET
-from collections import defaultdict
-from dataclasses import dataclass, field
 from pprint import pprint as pp
-from typing import Self
 
+from ontovis.types import Field, Group, Path
 import requests
 import typer
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -20,13 +18,7 @@ logger = logging.getLogger("main")
 app = typer.Typer()
 
 
-@app.command()
-def print_ontology(
-    file: str,
-    template: str = "graph",
-    skip_disabled: bool = True,
-    pprint: bool = False,
-):
+def read_document(file: str) -> ET.Element:
     if file.startswith("http") or file.startswith("https"):
         logger.info("fetching remote resource")
         response = requests.get(file)
@@ -36,6 +28,18 @@ def print_ontology(
         tree = ET.parse(file)
         root = tree.getroot()
 
+    return root
+
+
+@app.command()
+def print_ontology(
+    file: str,
+    template: str = "graph",
+    skip_disabled: bool = True,
+    pprint: bool = False,
+):
+    root = read_document(file)
+
     env = Environment(
         loader=PackageLoader("ontovis"),
         autoescape=select_autoescape(),
@@ -43,70 +47,87 @@ def print_ontology(
 
     tmpl = env.get_template(f"{template}.dot.jinja2")
 
-    # groups: dict[str, Group] = {}
-    groups: defaultdict[str, Group] = defaultdict(
-        lambda: Group(name="NOT_SET", subgroups=[], path=[], fields=[])
-    )
-
     paths = parse(root)
-    pp(paths)
-    n_disabled = len([p for p in paths if not p.enabled])
+    if paths == []:
+        logger.info("pathbuilder document was empty. quitting")
+        return typer.Exit()
 
-    for path in paths:
-        if skip_disabled and not path.enabled:
-            continue
-
-        if path.is_group:
-            # the defaultdict will create an empty group we can use
-            group = groups[path.path_id]
-            group.name = path.path_id
-            group.path = path.path_array
-
-            # a top-level group has no group-id, so we're done here
-            if path.group_id is None:
-                continue
-
-            # group has a parent: find it, and append this group to the subgrups
-            groups[path.group_id].subgroups.append(group)
-            groups[path.path_id] = group
-            continue
-
-        # the path is a field, so append it to the correct group
-        assert path.group_id is not None
-        groups[path.group_id].fields.append(
-            Field(name=path.path_id, path=path.path_array)
-        )
+    # try:
+    groups = build_groups(paths, skip_disabled)
+    # except Exception as e:
+    #     logger.error(f"Encountered exception: {e}")
+    #     return typer.Exit(1)
 
     if pprint:
         pp(groups)
         return typer.Exit()
 
     print(tmpl.render(groups=groups))
+
     return typer.Exit()
 
 
-@dataclass
-class Field:
-    name: str
-    path: list[str] = field(default_factory=list)
+def build_groups(paths: Iterable[Path], skip_disabled: bool = True) -> dict[str, Group]:
+    all_groups: dict[str, Group] = {}
+    top_level_groups: dict[str, Group] = {}
 
+    # first pass: assemble all group instances
+    for path in paths:
+        if skip_disabled and not path.enabled:
+            continue
 
-@dataclass
-class Group:
-    name: str
-    subgroups: list["Group"] = field(default_factory=list)
-    path: list[str] = field(default_factory=list)
-    fields: list[Field] = field(default_factory=list)
+        if not path.is_group:
+            continue
 
-    @classmethod
-    def find_group(cls, groups: Iterable["Group"], group_id: str) -> "Group | None":
-        for group in groups:
-            if group.name == group_id:
-                return group
+        # the defaultdict will create an empty group we can use
+        group = Group(name=path.path_id, path=path.path_array)
+        all_groups[path.path_id] = group
 
-        for group in groups:
-            hit = Group.find_group(group.subgroups, group_id)
-            if hit is not None:
-                return hit
+        if path.group_id is None:
+            top_level_groups[path.path_id] = group
 
-        return None
+    groups: dict[str, Group] = {}
+
+    for path in paths:
+        if skip_disabled and not path.enabled:
+            continue
+
+        if path.is_group:
+            if path.group_id is None:
+                # The current path does not reference a parent group: it is a
+                # top-level container, and has been processed in the first pass.
+                groups[path.path_id] = top_level_groups[path.path_id]
+                continue
+
+            group = all_groups[path.path_id]
+
+            # The current path has a parent group, which definitely exists in
+            # `all_groups`, and may already exist in `groups`. Check which case we
+            # are in, and use the appropriate group.
+            if path.group_id in groups:
+                parent_group = groups[path.group_id]
+            elif path.group_id in all_groups:
+                parent_group = all_groups[path.group_id]
+            else:
+                raise Exception(
+                    f"group with id {path.group_id} not found. This should not happen."
+                )
+
+            parent_group.subgroups.append(group)
+
+            continue
+
+        if path.group_id in groups:
+            parent_group = groups[path.group_id]
+        elif path.group_id in all_groups:
+            parent_group = all_groups[path.group_id]
+        else:
+            raise Exception(
+                f"group with id {path.group_id} not found. This should not happen."
+            )
+
+        # the path is a field, so append it to the correct group
+        assert path.group_id is not None
+        parent_group.fields.append(Field(name=path.path_id, path=path.path_array))
+
+    return groups

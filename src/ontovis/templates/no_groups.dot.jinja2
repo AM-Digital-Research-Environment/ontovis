@@ -1,21 +1,28 @@
 digraph G {
-   concentrate=true;
-   graph [fontname = "Courier"];
-   node [fontname = "Courier"];
-   edge [fontname = "Courier"];
-   node [style=filled,color=pink];
-   fontsize=20;
+    concentrate=true;
+    graph [fontname = "Courier"];
+    node [fontname = "Courier"];
+    edge [fontname = "Courier"];
+    node [style=filled,color=pink];
+    fontsize=20;
 
-   bgcolor=transparent;
+    bgcolor=transparent;
 
-    {% for name, group in groups|items %}
-        {% for field in group.fields %}
-            {{ field.path|join(" -> ") }};
-        {% endfor %}
-        {% for subgroup in group.subgroups %}
-            {% for field in subgroup.fields %}
-                {{ field.path|join(" -> ") }};
-            {% endfor %}
-        {% endfor %}
-    {% endfor %}
+    {%- for name, group in groups|items %}
+    # group: {{ name }}
+
+    {%- for field in group.fields %}
+    {{ field.path|join(" -> ") }};
+    {%- endfor %}
+
+    {%- for subgroup in group.subgroups %}
+
+    # subgroup of {{ name }}: {{ subgroup.name }}
+    {%- for field in subgroup.fields %}
+    {{ field.path|join(" -> ") }};
+    {%- endfor %}
+
+    {%- endfor %}
+
+    {%- endfor %}
 }
