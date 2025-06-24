@@ -26,6 +26,7 @@ dev = [
     "pytest>=8.4.0",
     "pytest-cov>=6.2.1",
     "ruff>=0.11.13",
+    "types-requests>=2.32.4.20250611",
 ]
 
 [tool.pytest.ini_options]
@@ -33,3 +34,27 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')"
 ]
 addopts = "-ra --cov=ontovis --cov-report=xml -m \"not slow\""
+
+[tool.ruff]
+# General Ruff settings
+line-length = 88 # Or your preferred line length
+target-version = "py311" # Or your target Python version
+
+[tool.ruff.lint]
+# Enable common linting rules, including import sorting (I)
+# "E" for Error, "F" for Flake8, "I" for isort-related rules (import sorting)
+select = ["E", "F", "I"]
+# You can add more categories like "B" for Bugbear, "ANN" for type annotations etc.
+# select =
+
+# If you have specific rules you want to ignore, add them here
+# ignore = ["E501"] # Example: ignore line length if you prefer formatter to handle it
+
+[tool.ruff.format]
+# These are the formatter-specific settings.
+# Ruff's formatter handles import grouping and sorting by default.
+# You typically don't need a specific setting for "sort imports" here.
+# However, you can configure other formatting aspects:
+quote-style = "double" # "double" or "single"
+indent-style = "space" # "space" or "tab"
+docstring-code-format = true # Format code examples in docstrings [1, 2]

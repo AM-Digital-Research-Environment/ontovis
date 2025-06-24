@@ -1,6 +1,5 @@
 from ontovis.types import Group
 
-
 g1 = Group(name="test1", subgroups=[], path=[], fields=[])
 
 test_groups = [Group(name=name) for name in ["test1", "test2", "test3"]]

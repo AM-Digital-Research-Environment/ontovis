@@ -1,14 +1,14 @@
-from collections.abc import Iterable
 import logging
 import xml.etree.ElementTree as ET
+from collections.abc import Iterable
 from pprint import pprint as pp
 
-from ontovis.types import Field, Group, Path
 import requests
 import typer
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 from ontovis.parser import parse
+from ontovis.types import Field, Group, Path
 
 logging.basicConfig(
     format="%(asctime)-15s %(name)-5s %(levelname)-8s %(message)s",

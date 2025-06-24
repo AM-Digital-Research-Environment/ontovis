@@ -1,8 +1,9 @@
 import pytest
 from typer.testing import CliRunner
-from ontovis.types import Field, Group, Path
-from ontovis.parser import parse
+
 from ontovis.main import app, build_groups, read_document
+from ontovis.parser import parse
+from ontovis.types import Field, Group
 
 runner = CliRunner()
 
