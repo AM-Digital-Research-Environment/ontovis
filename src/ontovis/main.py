@@ -13,8 +13,8 @@ app = typer.Typer(no_args_is_help=True, rich_markup_mode="markdown")
 
 
 class TemplateChoice(str, Enum):
-    no_fields = "no_fields"
     no_groups = "no_groups"
+    no_fields = "no_fields"
     full = "full"
 
 
@@ -23,7 +23,7 @@ def render(
     input: str,
     template: Annotated[
         TemplateChoice, typer.Option(case_sensitive=False)
-    ] = TemplateChoice.no_fields,
+    ] = TemplateChoice.no_groups,
     template_custom: Annotated[pathlib.Path | None, typer.Option()] = None,
     skip_disabled: Annotated[
         bool, typer.Option("--skip-disabled/--include-disabled")
@@ -39,10 +39,10 @@ def render(
 
     The builtin templates are:
 
-    * no_fields (default): render only the ontology-classes and omit grouping
+    * no_groups (default): render only the ontology-classes and omit grouping
       into fields and path-groups.
 
-    * no_groups: group the ontology classes into path-groups.
+    * no_fields: group the ontology classes into path-groups, omit fields.
 
     * full: group classes into fields, and fields into path-groups. **Warning:**
       the resulting representation can become very dense.
@@ -59,6 +59,8 @@ def render(
     env = Environment(
         loader=PackageLoader("ontovis"),
         autoescape=select_autoescape(),
+        trim_blocks=True,
+        lstrip_blocks=True,
     )
 
     tmpl = env.get_template(f"{template.value}.dot.jinja2")

@@ -8,21 +8,17 @@ digraph G {
 
     bgcolor=transparent;
 
-    {%- for name, group in groups|items %}
+    {% for name, group in groups|items %}
     # group: {{ name }}
-
-    {%- for field in group.fields %}
+    {% for field in group.fields %}
     {{ field.path|join(" -> ") }};
-    {%- endfor %}
+    {% endfor %}
 
-    {%- for subgroup in group.subgroups %}
-
+    {% for subgroup in group.subgroups %}
     # subgroup of {{ name }}: {{ subgroup.name }}
-    {%- for field in subgroup.fields %}
+    {% for field in subgroup.fields %}
     {{ field.path|join(" -> ") }};
-    {%- endfor %}
-
-    {%- endfor %}
-
-    {%- endfor %}
+    {% endfor %}
+    {% endfor %}
+    {% endfor %}
 }

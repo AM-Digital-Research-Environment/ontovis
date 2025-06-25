@@ -1,4 +1,4 @@
-{% macro subgraph_cluster(name, group, color="lightgrey") -%}
+{% macro subgraph_cluster(name, group, color="lightgrey") %}
 subgraph cluster_{{ name }} {
     style=filled;
     color={{ color }};
@@ -13,10 +13,10 @@ subgraph cluster_{{ name }} {
     {% endfor %}
 
     {% for sg in group.subgroups %}
-    {{ subgraph_cluster(sg.name, sg, "yellow") }}
+    {{ subgraph_cluster(sg.name, sg, "yellow")|indent }}
     {% endfor %}
 }
-{%- endmacro %}
+{% endmacro %}
 
 digraph G {
     concentrate=true;
