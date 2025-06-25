@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Annotated
 
 import typer
-from jinja2 import Environment, PackageLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader, PackageLoader, select_autoescape
 from rich import print as rprint
 
 from .io.read import read_local_or_remote
@@ -56,14 +56,24 @@ def render(
     """
     root = read_local_or_remote(input)
 
-    env = Environment(
-        loader=PackageLoader("ontovis"),
-        autoescape=select_autoescape(),
-        trim_blocks=True,
-        lstrip_blocks=True,
-    )
+    if template_custom is None:
+        env = Environment(
+            loader=PackageLoader("ontovis"),
+            autoescape=select_autoescape(),
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
 
-    tmpl = env.get_template(f"{template.value}.dot.jinja2")
+        tmpl = env.get_template(f"{template.value}.dot.jinja2")
+    else:
+        # figure out the parent of the passed template
+        env = Environment(
+            loader=FileSystemLoader(template_custom.parent),
+            autoescape=select_autoescape(),
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
+        tmpl = env.get_template(template_custom.name)
 
     paths = parse_pathbuilder(root)
     if paths == []:
