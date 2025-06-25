@@ -1,10 +1,14 @@
 # pyright: strict
+import os
+import pathlib
 from enum import Enum
 from typing import Annotated
 
+import click
 import typer
 from jinja2 import Environment, FileSystemLoader, PackageLoader, select_autoescape
 from rich import print as rprint
+from rich.table import Table
 
 from .io.read import read_local_or_remote
 from .parser import build_groups, parse_pathbuilder
@@ -89,10 +93,67 @@ def render(
     print(tmpl.render(groups=groups))
 
 
+@app.command(no_args_is_help=True)
+def stats(input: Annotated[pathlib.Path, typer.Argument(allow_dash=True)]):
+    """
+    Foo.
+    """
+    import networkx as nx
+    import heapq
 
-@app.command()
-def stats() -> typer.Exit:
-    return typer.Exit()
+    top_n = 3
+
+    with click.open_file(os.fsdecode(input)) as f:
+        G: nx.Graph[str]
+        G = nx.nx_agraph.read_dot(f)  # pyright: ignore[reportArgumentType]
+
+    table = Table("metric", "value", "remark")
+    table.add_row("#nodes", str(G.number_of_nodes()), "nodes == classes in ontology")
+    table.add_row("#edges", str(G.number_of_edges()), "multigraph, with parallel edges")
+    G_simple = nx.Graph(G)
+    table.add_row(
+        "#edges", str(G_simple.number_of_edges()), "simplified, no parallel edges"
+    )
+    table.add_row(
+        "avg. clustering",
+        f"{nx.average_clustering(G_simple):.4f}",
+        (
+            "ratio of triangles formed; 'a friend of a friend is also my friend'; "
+            "typically low, as paths don't tend to go 'back up' the concept hierarchy"
+        ),
+    )
+    indegree_centrality = nx.in_degree_centrality(G)
+    l = heapq.nlargest(top_n, indegree_centrality.items(), key=lambda x: x[1])
+    table.add_row(
+        f"in-degree centrality",
+        "\n".join([f"[bold]{x[0]}[/bold] ({x[1]:.3f})" for x in l]),
+        "other classes point to these a lot",
+    )
+    outdegree_centrality = nx.out_degree_centrality(G)
+    l = heapq.nlargest(top_n, outdegree_centrality.items(), key=lambda x: x[1])
+    table.add_row(
+        f"out-degree centrality",
+        "\n".join([f"[bold]{x[0]}[/bold] ({x[1]:.3f})" for x in l]),
+        "these point to many other classes",
+    )
+    betweenness = nx.betweenness_centrality(G)
+    l = heapq.nlargest(top_n, betweenness.items(), key=lambda x: x[1])
+    table.add_row(
+        f"betweenness centrality",
+        "\n".join([f"[bold]{x[0]}[/bold] ({x[1]:.3f})" for x in l]),
+        "many paths between nodes pass through these",
+    )
+    closeness = nx.closeness_centrality(G)
+    l = heapq.nlargest(top_n, closeness.items(), key=lambda x: x[1])
+    table.add_row(
+        f"closeness centrality",
+        "\n".join([f"[bold]{x[0]}[/bold] ({x[1]:.3f})" for x in l]),
+        "the more central a node is, the more nodes can be reached from it by shortest paths",
+    )
+
+    rprint(table)
+
+
 @app.callback()
 def callback():
     """
