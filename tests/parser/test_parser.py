@@ -1,6 +1,26 @@
 from ontovis.io import read_local_or_remote
 from ontovis.parser import build_groups, parse_pathbuilder
+from ontovis.parser.strings import strip_prefix
 from ontovis.parser.types import Field, Group
+
+
+def test_strip_prefix():
+    cases: list[dict[str, str | None]] = [
+        {"input": "http://foo.bar/level/final", "expected": "final"},
+        {"input": "./foo/bar/baz", "expected": "baz"},
+        {"input": None, "expected": "<NO_ID>"},
+    ]
+
+    for case in cases:
+        assert case["expected"] == strip_prefix(case["input"])
+
+
+def test_empty_parse():
+    root = read_local_or_remote("./tests/fixtures/fixture_empty.xml")
+    paths = parse_pathbuilder(root)
+    assert paths == []
+    result = build_groups(paths)
+    assert result == {}
 
 
 def test_group_builder():
