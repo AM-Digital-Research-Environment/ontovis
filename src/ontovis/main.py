@@ -24,15 +24,46 @@ class TemplateChoice(str, Enum):
 
 @app.command(no_args_is_help=True)
 def render(
-    input: str,
+    input: Annotated[
+        str,
+        typer.Argument(
+            help="The pathbuilder XML-dump. Can be a local or remote (http(s)) resource."
+        ),
+    ],
     template: Annotated[
-        TemplateChoice, typer.Option(case_sensitive=False)
+        TemplateChoice,
+        typer.Option(
+            case_sensitive=False,
+            help="The builtin template to use for rendering the pathbuilder.",
+        ),
     ] = TemplateChoice.no_groups,
-    template_custom: Annotated[pathlib.Path | None, typer.Option()] = None,
+    template_custom: Annotated[
+        pathlib.Path | None,
+        typer.Option(
+            help="Custom jinja2-template for rendering the pathbuilder; use this option to render to other languages than DOT."
+        ),
+    ] = None,
+    save: Annotated[
+        typer.FileTextWrite | None,
+        typer.Option(
+            help="In addition to printing to the screen, save the output to the specified file."
+        ),
+    ] = None,
     skip_disabled: Annotated[
-        bool, typer.Option("--skip-disabled/--include-disabled")
+        bool,
+        typer.Option(
+            "--skip-disabled/--include-disabled",
+            help="Skip path definitions that are disabled, or include disabled paths in the rendering.",
+        ),
     ] = True,
-    raw: Annotated[bool, typer.Option("--raw", "-r")] = False,
+    raw: Annotated[
+        bool,
+        typer.Option(
+            "--raw",
+            "-r",
+            help="Dump the raw parse-tree; useful for inspecting the structure when authoring custom templates.",
+        ),
+    ] = False,
 ):
     """
     Render a graphical representation of a pathbuilder definition.
@@ -92,16 +123,33 @@ def render(
 
     print(tmpl.render(groups=groups))
 
+    if save is not None:
+        _ = save.write(tmpl.render(groups=groups))
+
 
 @app.command(no_args_is_help=True)
-def stats(input: Annotated[pathlib.Path, typer.Argument(allow_dash=True)]):
+def stats(
+    input: Annotated[
+        pathlib.Path,
+        typer.Argument(
+            allow_dash=True,
+            help="The graph to analyze, in DOT format. You can pass a filename, or use '-' to read from standard input.",
+        ),
+    ],
+    n: Annotated[
+        int, typer.Option(help="Number of top-results to include in rankings")
+    ] = 3,
+):
     """
-    Foo.
+    Provide a set of key network analytical measures for a graph.
+
+    The graph must be provided in graphviz' dot-format; `ontovis render` can do this, so you can pipe its output into here:
+    ```
+    ontovis render ... | ontovis stats -
+    ```
     """
     import networkx as nx
     import heapq
-
-    top_n = 3
 
     with click.open_file(os.fsdecode(input)) as f:
         G: nx.Graph[str]
@@ -123,28 +171,28 @@ def stats(input: Annotated[pathlib.Path, typer.Argument(allow_dash=True)]):
         ),
     )
     indegree_centrality = nx.in_degree_centrality(G)
-    l = heapq.nlargest(top_n, indegree_centrality.items(), key=lambda x: x[1])
+    l = heapq.nlargest(n, indegree_centrality.items(), key=lambda x: x[1])
     table.add_row(
         f"in-degree centrality",
         "\n".join([f"[bold]{x[0]}[/bold] ({x[1]:.3f})" for x in l]),
         "other classes point to these a lot",
     )
     outdegree_centrality = nx.out_degree_centrality(G)
-    l = heapq.nlargest(top_n, outdegree_centrality.items(), key=lambda x: x[1])
+    l = heapq.nlargest(n, outdegree_centrality.items(), key=lambda x: x[1])
     table.add_row(
         f"out-degree centrality",
         "\n".join([f"[bold]{x[0]}[/bold] ({x[1]:.3f})" for x in l]),
         "these point to many other classes",
     )
     betweenness = nx.betweenness_centrality(G)
-    l = heapq.nlargest(top_n, betweenness.items(), key=lambda x: x[1])
+    l = heapq.nlargest(n, betweenness.items(), key=lambda x: x[1])
     table.add_row(
         f"betweenness centrality",
         "\n".join([f"[bold]{x[0]}[/bold] ({x[1]:.3f})" for x in l]),
         "many paths between nodes pass through these",
     )
     closeness = nx.closeness_centrality(G)
-    l = heapq.nlargest(top_n, closeness.items(), key=lambda x: x[1])
+    l = heapq.nlargest(n, closeness.items(), key=lambda x: x[1])
     table.add_row(
         f"closeness centrality",
         "\n".join([f"[bold]{x[0]}[/bold] ({x[1]:.3f})" for x in l]),
