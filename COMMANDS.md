@@ -17,7 +17,7 @@ $ ontovis [OPTIONS] COMMAND [ARGS]...
 **Commands**:
 
 * `render`: Render a graphical representation of a...
-* `stats`: Foo.
+* `stats`: Provide a set of key network analytical...
 
 ## `ontovis render`
 
@@ -52,19 +52,25 @@ $ ontovis render [OPTIONS] INPUT
 
 **Arguments**:
 
-* `INPUT`: [required]
+* `INPUT`: The pathbuilder XML-dump. Can be a local or remote (http(s)) resource.  [required]
 
 **Options**:
 
-* `--template [no_groups|no_fields|full]`: [default: no_groups]
-* `--template-custom PATH`
-* `--skip-disabled / --include-disabled`: [default: skip-disabled]
-* `-r, --raw`
+* `--template [no_groups|no_fields|full]`: The builtin template to use for rendering the pathbuilder.  [default: no_groups]
+* `--template-custom PATH`: Custom jinja2-template for rendering the pathbuilder; use this option to render to other languages than DOT.
+* `--save FILENAME`: In addition to printing to the screen, save the output to the specified file.
+* `--skip-disabled / --include-disabled`: Skip path definitions that are disabled, or include disabled paths in the rendering.  [default: skip-disabled]
+* `-r, --raw`: Dump the raw parse-tree; useful for inspecting the structure when authoring custom templates.
 * `--help`: Show this message and exit.
 
 ## `ontovis stats`
 
-Foo.
+Provide a set of key network analytical measures for a graph.
+
+The graph must be provided in graphviz&#x27; dot-format; `ontovis render` can do this, so you can pipe its output into here:
+```
+ontovis render ... | ontovis stats -
+```
 
 **Usage**:
 
@@ -74,9 +80,10 @@ $ ontovis stats [OPTIONS] INPUT
 
 **Arguments**:
 
-* `INPUT`: [required]
+* `INPUT`: The graph to analyze, in DOT format. You can pass a filename, or use &#x27;-&#x27; to read from standard input.  [required]
 
 **Options**:
 
+* `--n INTEGER`: Number of top-results to include in rankings  [default: 3]
 * `--help`: Show this message and exit.
 
