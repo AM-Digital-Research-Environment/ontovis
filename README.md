@@ -1,10 +1,44 @@
 # Ontovis
+[![Publish](https://github.com/AM-Digital-Research-Environment/ontovis/actions/workflows/publish.yaml/badge.svg?branch=main)](https://github.com/AM-Digital-Research-Environment/ontovis/actions/workflows/publish.yaml) ![PyPI - Version](https://img.shields.io/pypi/v/ontovis) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ontovis)
 
 Visualize and analyze the pathbuilder of a WissKI-system.
 
 A more detailed [rationale](#rationale) is available at the end of this document.
 
 ## Install
+
+Get it from PyPI:
+
+``` console
+$ python -m venv .venv
+$ source .venv/bin/activate
+$ pip install ontovis
+```
+
+### From source
+
+Or clone from source; note that these instructions recommend and assume [uv](https://docs.astral.sh/uv) over pip:
+
+``` console
+$ git clone https://github.com/AM-Digital-Research-Environment/ontovis
+$ cd ontovis
+$ uv sync
+$ uv run ontovis
+```
+
+### From source, with Docker
+
+Or, if you don't want to mess with dependencies, run it from docker:
+
+``` console
+$ git clone https://github.com/AM-Digital-Research-Environment/ontovis
+$ cd ontovis
+$ docker build -f docker/Dockerfile-3.11 -t "ontovis:3.11" .
+$ docker run ontovis:3.11 render <URL>
+```
+
+Please note that output redirection with `docker run` isn't working yet.
+You'll have to store the output produced by the above command to a file, then mount that into the container in order for `ontovis stats` to be able to pick it up.
 
 ## Requirements
 
