@@ -24,8 +24,8 @@ def test_entrypoint_local_file():
     assert result.exit_code == 0
 
 
-def test_pprint():
-    result = runner.invoke(app, ["render", "./tests/fixtures/fixture.xml", "--pprint"])
+def test_raw():
+    result = runner.invoke(app, ["render", "./tests/fixtures/fixture.xml", "--raw"])
     assert result.exit_code == 0
 
 

@@ -6,11 +6,11 @@ readme = "README.md"
 authors = [
     { name = "Oliver Baumann", email = "oliver.baumann@uni-bayreuth.de" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
     "jinja2>=3.1.6",
     "networkx[default]>=3.5",
-    "pygraphviz>=1.14",
+    "pygraphviz",
     "requests>=2.32.4",
     "rich>=14.0.0",
     "typer>=0.16.0",
